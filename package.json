@@ -1,16 +1,21 @@
 {
-  "name": "driftguard-mcp",
+  "name": "agent-blackbox-mcp",
   "version": "1.0.0",
-  "description": "The AI Agent Flight Recorder & Runtime Doctor (Model Context Protocol Server)",
+  "description": "The AI Agent Flight Recorder & Runtime Doctor: instant undo, port collision diagnostics & reproducibility (MCP Server)",
   "main": "dist/index.js",
   "bin": {
-    "driftguard-mcp": "./dist/index.js"
+    "agent-blackbox-mcp": "./dist/index.js"
   },
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/francaroscillidev-gif/agent-blackbox-mcp.git"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "node --test dist/**/*.test.js"
+    "test": "node --test dist/**/*.test.js",
+    "prepare": "npm run build"
   },
   "keywords": [
     "mcp",
@@ -20,9 +25,11 @@
     "claude",
     "devtools",
     "flight-recorder",
-    "doctor"
+    "doctor",
+    "blackbox",
+    "sandbox"
   ],
-  "author": "Antigravity Agent",
+  "author": "francaroscillidev",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
@@ -31,5 +38,10 @@
   "devDependencies": {
     "@types/node": "^22.13.1",
     "typescript": "^5.7.3"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

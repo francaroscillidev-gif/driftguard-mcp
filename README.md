@@ -1,12 +1,12 @@
 <div align="center">
 
-# 🛡️ DriftGuard MCP
+# 📦 Agent-Blackbox MCP
 ### The Flight Recorder & Runtime Doctor for AI Coding Agents
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B%20%7C%2020%2B%20%7C%2022%2B-brightgreen)](https://nodejs.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP-1.6.1-orange)](https://modelcontextprotocol.io/)
-[![CI Status](https://img.shields.io/badge/build-passing-brightgreen)](#)
+[![npm version](https://img.shields.io/badge/npm-agent--blackbox--mcp-cb3837.svg)](https://www.npmjs.com/package/agent-blackbox-mcp)
 
 *Give your AI agents (Claude, Cursor, Antigravity, Windsurf) instant undo, self-healing diagnostics for port collisions, and session reproducibility.*
 
@@ -20,11 +20,11 @@ When autonomous AI agents execute shell commands in real workspaces, three frequ
 2. **Zombie Processes & Port Collisions**: Background servers are left running. The agent gets cryptic `EADDRINUSE: 3000` or `137` errors and hallucinates broken fixes.
 3. **Session Amnesia**: After 20 trial-and-error commands, nobody knows the minimal recipe that actually made the environment work.
 
-**DriftGuard MCP acts as a flight recorder and OS physician directly inside the agent's MCP toolchain.**
+**Agent-Blackbox MCP acts as a flight recorder and OS physician directly inside the agent's MCP toolchain.**
 
 ---
 
-## ✨ Features
+## ✨ Key Capabilities
 
 - 📸 **Pre-Flight Snapshots**: Lightning-fast, lightweight filesystem snapshots storing SHA-256 diffs before risky agent tasks.
 - 🔄 **One-Click Rollback**: Restores altered/deleted files and deletes untracked clutter in milliseconds.
@@ -49,26 +49,18 @@ When autonomous AI agents execute shell commands in real workspaces, three frequ
 
 ---
 
-## 🚀 Quick Setup
+## 🚀 Instant Usage (via `npx`)
 
-### 1. Clone & Build
-```bash
-git clone https://github.com/<your-username>/driftguard-mcp.git
-cd driftguard-mcp
-npm install
-npm run build
-```
-
-### 2. Connect to Your AI Client
+No git cloning required. You can run it directly with `npx`:
 
 #### 🟣 Claude Desktop
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+Add to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "driftguard": {
-      "command": "node",
-      "args": ["/ABSOLUTE/PATH/TO/driftguard-mcp/dist/index.js"]
+    "agent-blackbox": {
+      "command": "npx",
+      "args": ["-y", "agent-blackbox-mcp"]
     }
   }
 }
@@ -76,22 +68,25 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
 #### ⚡ Cursor / Antigravity / Windsurf
 Add via the MCP settings tab:
-* **Command**: `node`
-* **Args**: `/ABSOLUTE/PATH/TO/driftguard-mcp/dist/index.js`
+* **Command**: `npx`
+* **Args**: `-y agent-blackbox-mcp`
 
 ---
 
-## 🧪 Testing
+## 💻 Local Installation (Development)
 
-Run the automated test suite:
 ```bash
+git clone https://github.com/francaroscillidev-gif/agent-blackbox-mcp.git
+cd agent-blackbox-mcp
+npm install
+npm run build
 npm test
 ```
 
 ---
 
 ## 🤝 Contributing
-Contributions are welcome! Feel free to open issues or pull requests.
+Contributions are welcome! Feel free to open issues or pull requests on [GitHub](https://github.com/francaroscillidev-gif/agent-blackbox-mcp).
 
 ## 📄 License
 Released under the [MIT License](LICENSE).
