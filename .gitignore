@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+
+# DriftGuard runtime files & snapshots
+.driftguard/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
