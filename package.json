@@ -1,6 +1,6 @@
 {
   "name": "agent-blackbox-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The AI Agent Flight Recorder & Runtime Doctor: instant undo, port collision diagnostics & reproducibility (MCP Server)",
   "main": "dist/index.js",
   "bin": {
