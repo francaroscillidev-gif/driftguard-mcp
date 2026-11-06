@@ -1,7 +1,7 @@
 {
   "name": "agent-blackbox-mcp",
-  "version": "1.5.0",
-  "description": "The Complete AI Agent Flight Recorder, Prompt Shield, Health Score & Governance Suite (MCP Server)",
+  "version": "1.6.0",
+  "description": "The Autonomous AI Agent Flight Recorder, Self-Healing, Bloat Cleaner & Security Suite (MCP Server)",
   "main": "dist/index.js",
   "bin": {
     "agent-blackbox-mcp": "./dist/index.js"
@@ -25,8 +25,10 @@
     "cursor",
     "claude",
     "devtools",
+    "self-healing",
+    "bloat-cleaner",
+    "dep-auditor",
     "prompt-shield",
-    "prompt-injection",
     "health-score",
     "flight-recorder",
     "doctor",

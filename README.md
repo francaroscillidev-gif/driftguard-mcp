@@ -1,14 +1,14 @@
 <div align="center">
 
 # 📦 Agent-Blackbox MCP
-### The Autonomous Flight Recorder, Prompt Shield, Workspace Health & Governance Suite for AI Agents
+### The Autonomous Flight Recorder, Self-Healing, Bloat Cleaner & Governance Suite for AI Agents
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B%20%7C%2020%2B%20%7C%2022%2B-brightgreen)](https://nodejs.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP-1.6.1-orange)](https://modelcontextprotocol.io/)
-[![npm version](https://img.shields.io/badge/npm-v1.5.0-cb3837.svg)](https://www.npmjs.com/package/agent-blackbox-mcp)
+[![npm version](https://img.shields.io/badge/npm-v1.6.0-cb3837.svg)](https://www.npmjs.com/package/agent-blackbox-mcp)
 
-*The premier enterprise reliability suite for Claude, Cursor, Antigravity, and Windsurf: prompt injection protection, instant undo, health score metrics, token budget controls, and network safety.*
+*The definitive enterprise resilience suite for Claude, Cursor, Antigravity, and Windsurf: autonomous self-healing, bloat pruning, prompt injection defense, instant rollback, and dependency auditing.*
 
 **Author**: Franca Roscilli ([@francaroscillidev-gif](https://github.com/francaroscillidev-gif))
 
@@ -16,8 +16,11 @@
 
 ---
 
-## ✨ Features (v1.5.0 Production Apex)
+## ✨ Features (v1.6.0 Autonomous Resilience)
 
+- 🦺 **Transactional Auto-Healing (`driftguard_auto_heal`)**: Diagnoses runtime failures, eliminates blocking zombie processes, and restores environment health in a single step.
+- 🧹 **Workspace Bloat Cleaner (`driftguard_clean_bloat`)**: Automatically cleans `.cache`, `.pytest_cache`, `.DS_Store`, and rogue log files, reclaiming disk space and accelerating snapshot times.
+- 🛡️ **Dependency Vulnerability Auditor (`driftguard_audit_dependencies`)**: Scans package manifests for compromised dependencies, malicious supply-chain packages, and deprecated libraries.
 - 💉 **Prompt Injection & Jailbreak Shield (`driftguard_prompt_shield`)**: Scans external prompts, files, and issues to block indirect prompt injection, DAN jailbreaks, instruction overrides, and credential theft.
 - 🩺 **Workspace Health Score Index (`driftguard_health_score`)**: Computes an instant 0-100 diagnostic index assessing exposed secrets, zombie processes, token budgets, and snapshot coverage.
 - 📊 **Token & Cost Budget Controller (`driftguard_budget_status`)**: Real-time telemetry tracking estimated token spend and session costs with customizable alert caps.
@@ -34,10 +37,13 @@
 
 ---
 
-## 🛠️ Complete MCP Toolset (18 Tools)
+## 🛠️ Complete MCP Toolset (21 Tools)
 
 | Tool Name | Parameters | Description |
 | :--- | :--- | :--- |
+| `driftguard_auto_heal` | `errorLog: string` | One-step autonomous resolution: terminates blocking zombies and applies fixes. |
+| `driftguard_clean_bloat` | `dryRun?: boolean` | Prunes cache folders (.pytest_cache, .cache, .tmp) and orphan logs. |
+| `driftguard_audit_dependencies` | _none_ | Audits dependencies for known compromised packages and deprecations. |
 | `driftguard_health_score` | _none_ | Instant 0-100 health diagnostic covering secrets, ports, budgets, and snapshots. |
 | `driftguard_prompt_shield` | `text: string` | Detects prompt injection, jailbreaks, and credential theft vectors. |
 | `driftguard_budget_status` | _none_ | Tracks session token usage, estimated USD costs, and threshold alerts. |
@@ -70,7 +76,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "agent-blackbox": {
       "command": "npx",
-      "args": ["-y", "agent-blackbox-mcp@1.5.0"]
+      "args": ["-y", "agent-blackbox-mcp@1.6.0"]
     }
   }
 }
@@ -79,7 +85,7 @@ Add to `claude_desktop_config.json`:
 #### ⚡ Cursor / Antigravity / Windsurf
 Add via the MCP settings tab:
 * **Command**: `npx`
-* **Args**: `-y agent-blackbox-mcp@1.5.0`
+* **Args**: `-y agent-blackbox-mcp@1.6.0`
 
 #### 📊 Optional Web Dashboard
 Run the dashboard alongside the server:

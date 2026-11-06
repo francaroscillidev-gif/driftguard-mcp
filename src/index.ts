@@ -21,6 +21,9 @@ import { NetworkEgressGuard } from './modules/networkGuard.js';
 import { AuditTrailExporter } from './modules/auditReport.js';
 import { PromptShieldGuard } from './modules/promptShield.js';
 import { HealthScoreEngine } from './modules/healthScore.js';
+import { WorkspaceBloatCleaner } from './modules/cleaner.js';
+import { DependencyAuditor } from './modules/depAuditor.js';
+import { AutoHealPipeline } from './modules/autoHeal.js';
 
 const workspaceRoot = process.cwd();
 const snapshotManager = new SnapshotManager(workspaceRoot);
@@ -36,6 +39,9 @@ const networkGuard = new NetworkEgressGuard();
 const auditExporter = new AuditTrailExporter();
 const promptShield = new PromptShieldGuard();
 const healthEngine = new HealthScoreEngine();
+const bloatCleaner = new WorkspaceBloatCleaner();
+const depAuditor = new DependencyAuditor();
+const autoHealer = new AutoHealPipeline(runtimeDoctor);
 
 if (process.argv.includes('--ui')) {
   const dashboard = new DashboardServer(workspaceRoot, 4200);
@@ -47,7 +53,7 @@ if (process.argv.includes('--ui')) {
 const server = new Server(
   {
     name: 'agent-blackbox-mcp',
-    version: '1.5.0'
+    version: '1.6.0'
   },
   {
     capabilities: {
@@ -57,6 +63,44 @@ const server = new Server(
 );
 
 const TOOLS: Tool[] = [
+  {
+    name: 'driftguard_auto_heal',
+    description:
+      'Auto-riparazione transazionale in un unico passaggio: diagnostica l\'errore, killa i processi zombie e ripristina la disponibilità delle risorse.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        errorLog: {
+          type: 'string',
+          description: 'L\'errore o lo stack trace ricevuto.'
+        }
+      },
+      required: ['errorLog']
+    }
+  },
+  {
+    name: 'driftguard_clean_bloat',
+    description:
+      'Spazzino intelligente del workspace: rimuove in sicurezza file temporanei, directory di cache (.pytest_cache, .cache, .tmp) e file di log orfani.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dryRun: {
+          type: 'boolean',
+          description: 'Se true, mostra solo cosa verrebbe eliminato senza cancellare nulla.'
+        }
+      }
+    }
+  },
+  {
+    name: 'driftguard_audit_dependencies',
+    description:
+      'Ispettore di sicurezza delle dipendenze: scansiona package.json per rilevare pacchetti compromessi noti, malware supply-chain o librerie deprecate.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
   {
     name: 'driftguard_health_score',
     description:
@@ -327,6 +371,44 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      case 'driftguard_auto_heal': {
+        const errorLog = (args?.errorLog as string) || '';
+        const healRes = autoHealer.healError(errorLog);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(healRes, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_clean_bloat': {
+        const dryRun = Boolean(args?.dryRun);
+        const result = bloatCleaner.clean(workspaceRoot, dryRun);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_audit_dependencies': {
+        const audit = depAuditor.audit(workspaceRoot);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: audit.markdownSummary
+            }
+          ]
+        };
+      }
+
       case 'driftguard_health_score': {
         const result = healthEngine.calculateHealth(workspaceRoot, snapshotManager, secretScanner, runtimeDoctor, telemetryManager);
         return {
