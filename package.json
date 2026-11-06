@@ -1,7 +1,7 @@
 {
   "name": "agent-blackbox-mcp",
-  "version": "1.4.0",
-  "description": "The Complete AI Agent Flight Recorder, Governance, Network Shield & Token Budget Controller (MCP Server)",
+  "version": "1.5.0",
+  "description": "The Complete AI Agent Flight Recorder, Prompt Shield, Health Score & Governance Suite (MCP Server)",
   "main": "dist/index.js",
   "bin": {
     "agent-blackbox-mcp": "./dist/index.js"
@@ -25,6 +25,9 @@
     "cursor",
     "claude",
     "devtools",
+    "prompt-shield",
+    "prompt-injection",
+    "health-score",
     "flight-recorder",
     "doctor",
     "circuit-breaker",

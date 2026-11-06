@@ -19,6 +19,8 @@ import { LogCompressor } from './modules/logCompressor.js';
 import { TelemetryBudgetManager } from './modules/telemetry.js';
 import { NetworkEgressGuard } from './modules/networkGuard.js';
 import { AuditTrailExporter } from './modules/auditReport.js';
+import { PromptShieldGuard } from './modules/promptShield.js';
+import { HealthScoreEngine } from './modules/healthScore.js';
 
 const workspaceRoot = process.cwd();
 const snapshotManager = new SnapshotManager(workspaceRoot);
@@ -32,6 +34,8 @@ const logCompressor = new LogCompressor();
 const telemetryManager = new TelemetryBudgetManager({ maxTokens: 250000, maxCostUSD: 1.0 });
 const networkGuard = new NetworkEgressGuard();
 const auditExporter = new AuditTrailExporter();
+const promptShield = new PromptShieldGuard();
+const healthEngine = new HealthScoreEngine();
 
 if (process.argv.includes('--ui')) {
   const dashboard = new DashboardServer(workspaceRoot, 4200);
@@ -43,7 +47,7 @@ if (process.argv.includes('--ui')) {
 const server = new Server(
   {
     name: 'agent-blackbox-mcp',
-    version: '1.4.0'
+    version: '1.5.0'
   },
   {
     capabilities: {
@@ -53,6 +57,30 @@ const server = new Server(
 );
 
 const TOOLS: Tool[] = [
+  {
+    name: 'driftguard_health_score',
+    description:
+      'Calcola lo Score di Salute complessivo (0-100) del workspace: verifica segreti esposti, processi zombie, budget token e checkpoint pronti.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'driftguard_prompt_shield',
+    description:
+      'Scansiona testi, file o issue esterne per rilevare e bloccare attacchi di Prompt Injection, tentativi di jailbreak o furto di credenziali.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: 'Il testo da esaminare prima di elaborarlo.'
+        }
+      },
+      required: ['text']
+    }
+  },
   {
     name: 'driftguard_budget_status',
     description:
@@ -299,6 +327,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      case 'driftguard_health_score': {
+        const result = healthEngine.calculateHealth(workspaceRoot, snapshotManager, secretScanner, runtimeDoctor, telemetryManager);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result.markdownSummary
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_prompt_shield': {
+        const text = (args?.text as string) || '';
+        const assessment = promptShield.inspectContent(text);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(assessment, null, 2)
+            }
+          ]
+        };
+      }
+
       case 'driftguard_budget_status': {
         const status = telemetryManager.getStatus();
         return {
