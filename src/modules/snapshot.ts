@@ -6,7 +6,7 @@ export interface FileSnapshotEntry {
   relativePath: string;
   hash: string;
   size: number;
-  contentBase64?: string; // Stored if small (< 1MB), otherwise stored in shadow store
+  contentBase64?: string;
 }
 
 export interface SnapshotMetadata {
@@ -15,6 +15,12 @@ export interface SnapshotMetadata {
   timestamp: string;
   workspacePath: string;
   files: Record<string, FileSnapshotEntry>;
+}
+
+export interface DiffEntry {
+  file: string;
+  status: 'MODIFIED' | 'ADDED' | 'DELETED';
+  diffPreview: string;
 }
 
 export class SnapshotManager {
@@ -47,6 +53,7 @@ export class SnapshotManager {
   }
 
   private walkDir(currentDir: string, rootDir: string): string[] {
+    if (!fs.existsSync(currentDir)) return [];
     const entries = fs.readdirSync(currentDir, { withFileTypes: true });
     let files: string[] = [];
 
@@ -87,7 +94,6 @@ export class SnapshotManager {
         size: stats.size
       };
 
-      // Copia il contenuto del file nel blob store per il rollback
       const blobPath = path.join(snapBlobDir, hash);
       if (!fs.existsSync(blobPath)) {
         fs.copyFileSync(filePath, blobPath);
@@ -130,6 +136,97 @@ export class SnapshotManager {
     return list.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   }
 
+  /**
+   * Genera un'anteprima visiva del diff (righe + e -) di ciò che cambierà prima di fare il rollback
+   */
+  public previewRollback(snapshotId?: string): {
+    snapshotId: string;
+    totalChanges: number;
+    diffs: DiffEntry[];
+  } {
+    let targetSnapId = snapshotId;
+    if (!targetSnapId) {
+      const all = this.listSnapshots();
+      if (all.length === 0) {
+        throw new Error('Nessuno snapshot disponibile per l\'anteprima.');
+      }
+      targetSnapId = all[0].id;
+    }
+
+    const metaFile = path.join(this.storageDir, `${targetSnapId}.json`);
+    if (!fs.existsSync(metaFile)) {
+      throw new Error(`Snapshot ${targetSnapId} non trovato.`);
+    }
+
+    const metadata: SnapshotMetadata = JSON.parse(fs.readFileSync(metaFile, 'utf-8'));
+    const snapBlobDir = path.join(this.storageDir, targetSnapId, 'blobs');
+    const diffs: DiffEntry[] = [];
+
+    // 1. File attualmente nel workspace ma assenti nello snapshot (verranno eliminati)
+    const currentFiles = this.walkDir(this.baseDir, this.baseDir);
+    const currentRelSet = new Set<string>();
+
+    for (const filePath of currentFiles) {
+      const relPath = path.relative(this.baseDir, filePath);
+      currentRelSet.add(relPath);
+
+      if (!metadata.files[relPath]) {
+        diffs.push({
+          file: relPath,
+          status: 'ADDED',
+          diffPreview: `--- /dev/null\n+++ ${relPath} (Verrà eliminato dal rollback)`
+        });
+      }
+    }
+
+    // 2. File presenti nello snapshot
+    for (const [relPath, entry] of Object.entries(metadata.files)) {
+      const targetFilePath = path.join(this.baseDir, relPath);
+      const blobPath = path.join(snapBlobDir, entry.hash);
+
+      if (!fs.existsSync(targetFilePath)) {
+        diffs.push({
+          file: relPath,
+          status: 'DELETED',
+          diffPreview: `--- ${relPath} (Attualmente mancante)\n+++ ${relPath} (Verrà ripristinato dallo snapshot)`
+        });
+      } else {
+        const curHash = this.hashFile(targetFilePath);
+        if (curHash !== entry.hash) {
+          // Genera un diff leggero riga per riga
+          const originalLines = fs.existsSync(blobPath) ? fs.readFileSync(blobPath, 'utf-8').split('\n') : [];
+          const currentLines = fs.readFileSync(targetFilePath, 'utf-8').split('\n');
+
+          const diffLines: string[] = [
+            `@@ Snapshot vs Stato Corrente per ${relPath} @@`
+          ];
+
+          const max = Math.min(Math.max(originalLines.length, currentLines.length), 30);
+          for (let i = 0; i < max; i++) {
+            const orig = originalLines[i];
+            const curr = currentLines[i];
+            if (orig !== curr) {
+              if (orig !== undefined) diffLines.push(`- ${orig}`);
+              if (curr !== undefined) diffLines.push(`+ ${curr}`);
+            }
+          }
+
+          diffs.push({
+            file: relPath,
+            status: 'MODIFIED',
+            diffPreview: diffLines.join('\n')
+          });
+        }
+      }
+    }
+
+    return {
+      snapshotId: targetSnapId,
+      totalChanges: diffs.length,
+      diffs
+    };
+  }
+
   public rollback(snapshotId?: string): { restored: string[]; deleted: string[]; snapshotId: string } {
     let targetSnapId = snapshotId;
     if (!targetSnapId) {
@@ -151,22 +248,17 @@ export class SnapshotManager {
     const restored: string[] = [];
     const deleted: string[] = [];
 
-    // 1. Controlla i file attualmente presenti nel workspace
+    // 1. Elimina file creati dopo lo snapshot
     const currentFiles = this.walkDir(this.baseDir, this.baseDir);
-    const currentRelSet = new Set<string>();
-
     for (const filePath of currentFiles) {
       const relPath = path.relative(this.baseDir, filePath);
-      currentRelSet.add(relPath);
-
-      // Se il file corrente NON era presente nello snapshot, è stato creato dopo -> eliminalo
       if (!metadata.files[relPath]) {
         fs.unlinkSync(filePath);
         deleted.push(relPath);
       }
     }
 
-    // 2. Ripristina i file dello snapshot che mancano o che sono stati modificati
+    // 2. Ripristina i file modificati o eliminati
     for (const [relPath, entry] of Object.entries(metadata.files)) {
       const targetFilePath = path.join(this.baseDir, relPath);
       const blobPath = path.join(snapBlobDir, entry.hash);

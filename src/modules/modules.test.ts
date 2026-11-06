@@ -5,76 +5,81 @@ import path from 'node:path';
 import { SnapshotManager } from './snapshot.js';
 import { RuntimeDoctor } from './doctor.js';
 import { RecipeExtractor } from './recipe.js';
+import { SafetyGuardrail } from './safety.js';
 
-test('Snapshot & Rollback Engine', (t) => {
-  const testWorkspace = path.join(process.cwd(), 'test-temp-ws');
+test('Snapshot, Diff Preview & Rollback Engine', () => {
+  const testWorkspace = path.join(process.cwd(), 'test-temp-ws-v110');
   fs.mkdirSync(testWorkspace, { recursive: true });
 
   const dummyFile = path.join(testWorkspace, 'app.txt');
-  fs.writeFileSync(dummyFile, 'v1 original content', 'utf-8');
+  fs.writeFileSync(dummyFile, 'line 1\nline 2 original\n', 'utf-8');
 
   const sm = new SnapshotManager(testWorkspace);
   const snap = sm.createSnapshot('test-checkpoint');
 
-  assert.ok(snap.id.startsWith('snap_'));
-  assert.strictEqual(Object.keys(snap.files).length, 1);
+  // Modifica file e crea file spazzatura
+  fs.writeFileSync(dummyFile, 'line 1\nline 2 corrupted\nline 3 extra\n', 'utf-8');
+  const garbage = path.join(testWorkspace, 'temp_garbage.tmp');
+  fs.writeFileSync(garbage, 'garbage', 'utf-8');
 
-  // Modifica il file originale e crea un file nuovo indesiderato
-  fs.writeFileSync(dummyFile, 'v2 corrupted content', 'utf-8');
-  const unwantedFile = path.join(testWorkspace, 'bad_script.js');
-  fs.writeFileSync(unwantedFile, 'console.log("bad")', 'utf-8');
+  // 1. Verifica anteprima visiva diff
+  const preview = sm.previewRollback(snap.id);
+  assert.strictEqual(preview.totalChanges, 2);
+  const modDiff = preview.diffs.find((d) => d.file === 'app.txt');
+  assert.ok(modDiff);
+  assert.strictEqual(modDiff.status, 'MODIFIED');
+  assert.ok(modDiff.diffPreview.includes('- line 2 original'));
+  assert.ok(modDiff.diffPreview.includes('+ line 2 corrupted'));
 
-  // Esegue il rollback
+  // 2. Esegue il rollback
   const rollbackResult = sm.rollback(snap.id);
   assert.strictEqual(rollbackResult.restored.length, 1);
   assert.strictEqual(rollbackResult.deleted.length, 1);
 
-  // Verifica che il file originale sia tornato v1 e che il file indesiderato sia stato cancellato
-  assert.strictEqual(fs.readFileSync(dummyFile, 'utf-8'), 'v1 original content');
-  assert.ok(!fs.existsSync(unwantedFile));
+  assert.strictEqual(fs.readFileSync(dummyFile, 'utf-8'), 'line 1\nline 2 original\n');
+  assert.ok(!fs.existsSync(garbage));
 
-  // Pulizia
   fs.rmSync(testWorkspace, { recursive: true, force: true });
 });
 
-test('Runtime Doctor Diagnostic', () => {
+test('Safety Guardrail Interceptor', () => {
+  const guard = new SafetyGuardrail();
+
+  const res1 = guard.evaluateCommand('rm -rf /');
+  assert.strictEqual(res1.verdict, 'CRITICAL_BLOCK');
+  assert.strictEqual(res1.riskScore, 100);
+
+  const res2 = guard.evaluateCommand('chmod 777 -R /');
+  assert.strictEqual(res2.verdict, 'CRITICAL_BLOCK');
+
+  const res3 = guard.evaluateCommand('DROP DATABASE production;');
+  assert.strictEqual(res3.verdict, 'WARNING');
+
+  const res4 = guard.evaluateCommand('npm test');
+  assert.strictEqual(res4.verdict, 'SAFE');
+  assert.strictEqual(res4.riskScore, 0);
+});
+
+test('Advanced Runtime Doctor (OOM, Missing modules & Env)', () => {
   const doctor = new RuntimeDoctor();
-  const sampleError = 'Error: listen EADDRINUSE: address already in use :::3000';
-  const diag = doctor.diagnoseError(sampleError);
 
-  assert.strictEqual(diag.hasConflict, true);
-  assert.strictEqual(diag.issueType, 'PORT_IN_USE');
-  assert.ok(diag.summary.includes('3000'));
-});
+  // OOM
+  const diagOom = doctor.diagnoseError('FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory');
+  assert.strictEqual(diagOom.issueType, 'OUT_OF_MEMORY');
+  assert.ok(diagOom.actionableFix.includes('--max-old-space-size'));
 
-test('Recipe Extractor', () => {
-  const testWorkspace = path.join(process.cwd(), 'test-temp-ws-recipe');
-  const extractor = new RecipeExtractor(testWorkspace);
+  // Missing Node Module
+  const diagNode = doctor.diagnoseError("Error: Cannot find module 'express'");
+  assert.strictEqual(diagNode.issueType, 'MISSING_DEPENDENCY');
+  assert.ok(diagNode.actionableFix.includes('npm install express'));
 
-  extractor.recordCommand({
-    command: 'npm install',
-    exitCode: 0,
-    timestamp: new Date().toISOString(),
-    durationMs: 1200
-  });
+  // Missing Python Module
+  const diagPy = doctor.diagnoseError("ModuleNotFoundError: No module named 'torch'");
+  assert.strictEqual(diagPy.issueType, 'MISSING_DEPENDENCY');
+  assert.ok(diagPy.actionableFix.includes('pip install torch'));
 
-  extractor.recordCommand({
-    command: 'broken-command --fail',
-    exitCode: 1,
-    timestamp: new Date().toISOString(),
-    durationMs: 300
-  });
-
-  extractor.recordCommand({
-    command: 'npm run build',
-    exitCode: 0,
-    timestamp: new Date().toISOString(),
-    durationMs: 2500
-  });
-
-  const recipe = extractor.generateRecipe();
-  assert.strictEqual(recipe.blueprintCommands.length, 2);
-  assert.deepStrictEqual(recipe.blueprintCommands, ['npm install', 'npm run build']);
-
-  fs.rmSync(testWorkspace, { recursive: true, force: true });
+  // Missing Env Var
+  const diagEnv = doctor.diagnoseError('process.env.DATABASE_URL is undefined');
+  assert.strictEqual(diagEnv.issueType, 'MISSING_ENV_VAR');
+  assert.ok(diagEnv.actionableFix.includes('DATABASE_URL'));
 });

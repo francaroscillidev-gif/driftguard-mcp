@@ -10,16 +10,27 @@ import {
 import { SnapshotManager } from './modules/snapshot.js';
 import { RuntimeDoctor } from './modules/doctor.js';
 import { RecipeExtractor } from './modules/recipe.js';
+import { SafetyGuardrail } from './modules/safety.js';
+import { DashboardServer } from './modules/dashboard.js';
 
 const workspaceRoot = process.cwd();
 const snapshotManager = new SnapshotManager(workspaceRoot);
 const runtimeDoctor = new RuntimeDoctor();
 const recipeExtractor = new RecipeExtractor(workspaceRoot);
+const safetyGuardrail = new SafetyGuardrail();
+
+// Se l'utente lancia con --ui, avvia anche la dashboard HTTP locale
+if (process.argv.includes('--ui')) {
+  const dashboard = new DashboardServer(workspaceRoot, 4200);
+  dashboard.start().then((url) => {
+    process.stderr.write(`[Agent-Blackbox] Dashboard web attiva su: ${url}\n`);
+  });
+}
 
 const server = new Server(
   {
-    name: 'driftguard-mcp',
-    version: '1.0.0'
+    name: 'agent-blackbox-mcp',
+    version: '1.1.0'
   },
   {
     capabilities: {
@@ -28,8 +39,37 @@ const server = new Server(
   }
 );
 
-// Definizione dei Tools esposti all'agente AI
+// Strumenti esposti all'agente AI (10 tool totali)
 const TOOLS: Tool[] = [
+  {
+    name: 'driftguard_safety_check',
+    description:
+      'Valuta preventivamente il rischio di un comando shell prima di eseguirlo, bloccando comandi distruttivi (rm -rf /, drop database, esposizione chiavi, fork bomb).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        command: {
+          type: 'string',
+          description: 'Il comando shell che l\'agente intende eseguire.'
+        }
+      },
+      required: ['command']
+    }
+  },
+  {
+    name: 'driftguard_preview_rollback',
+    description:
+      'Mostra un diff dettagliato riga per riga di ciò che cambierà, verrà ripristinato o cancellato PRIMA di eseguire il rollback effettivo.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        snapshotId: {
+          type: 'string',
+          description: 'ID dello snapshot da confrontare. Se omesso, usa il più recente.'
+        }
+      }
+    }
+  },
   {
     name: 'driftguard_create_snapshot',
     description:
@@ -39,7 +79,7 @@ const TOOLS: Tool[] = [
       properties: {
         label: {
           type: 'string',
-          description: 'Descrizione opzionale dello scopo dello snapshot (es. "prima di migrazione DB" o "prima di refactoring auth")'
+          description: 'Descrizione opzionale dello scopo dello snapshot.'
         }
       }
     }
@@ -55,13 +95,13 @@ const TOOLS: Tool[] = [
   {
     name: 'driftguard_rollback',
     description:
-      'Esegue un rollback immediato (Undo) ripristinando il workspace allo snapshot precedente: elimina i file creati dopo lo snapshot e ripristina quelli modificati o cancellati.',
+      'Esegue un rollback immediato (Undo) ripristinando il workspace allo snapshot precedente.',
     inputSchema: {
       type: 'object',
       properties: {
         snapshotId: {
           type: 'string',
-          description: 'ID dello snapshot da ripristinare. Se omesso, viene utilizzato il più recente.'
+          description: 'ID dello snapshot da ripristinare. Se omesso, usa il più recente.'
         }
       }
     }
@@ -69,13 +109,13 @@ const TOOLS: Tool[] = [
   {
     name: 'driftguard_diagnose_failure',
     description:
-      'Analizza un messaggio di errore o output di log per diagnosticare problemi di sistema (porte bloccate da processi zombie, permessi, comandi mancanti) e suggerire la soluzione immediata.',
+      'Analizza errori e stack trace per diagnosticare problemi di sistema (porte bloccate, OOM heap overflow, pacchetti Node/Python mancanti, env vars mancanti) con relativa soluzione prescrittiva.',
     inputSchema: {
       type: 'object',
       properties: {
         errorOutput: {
           type: 'string',
-          description: 'Il testo del messaggio di errore o dello stack trace ricevuto durante l\'esecuzione del comando.'
+          description: 'Il testo del messaggio di errore o dello stack trace.'
         }
       },
       required: ['errorOutput']
@@ -90,14 +130,14 @@ const TOOLS: Tool[] = [
       properties: {
         port: {
           type: 'number',
-          description: 'Porta TCP specifica da ispezionare (es. 3000, 8080). Se omessa, elenca tutte le porte in ascolto.'
+          description: 'Porta TCP specifica da ispezionare.'
         }
       }
     }
   },
   {
     name: 'driftguard_kill_process',
-    description: 'Termina un processo di sistema identificato dal suo PID (es. per liberare una porta bloccata).',
+    description: 'Termina un processo di sistema identificato dal suo PID.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -129,7 +169,7 @@ const TOOLS: Tool[] = [
         },
         durationMs: {
           type: 'number',
-          description: 'Durata dell\'esecuzione in millisecondi (opzionale).'
+          description: 'Durata in millisecondi.'
         }
       },
       required: ['command', 'exitCode']
@@ -138,7 +178,7 @@ const TOOLS: Tool[] = [
   {
     name: 'driftguard_get_recipe',
     description:
-      'Genera il Reproducibility Blueprint: un estratto pulito e ordinato dei soli comandi riusciti ed essenziali per riprodurre lo stato dell\'ambiente.',
+      'Genera il Reproducibility Blueprint: un estratto pulito dei soli comandi riusciti ed essenziali.',
     inputSchema: {
       type: 'object',
       properties: {}
@@ -146,17 +186,41 @@ const TOOLS: Tool[] = [
   }
 ];
 
-// Handler Lista Tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return { tools: TOOLS };
 });
 
-// Handler Esecuzione Tools
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
     switch (name) {
+      case 'driftguard_safety_check': {
+        const cmd = (args?.command as string) || '';
+        const assessment = safetyGuardrail.evaluateCommand(cmd);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(assessment, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_preview_rollback': {
+        const snapId = args?.snapshotId as string | undefined;
+        const preview = snapshotManager.previewRollback(snapId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(preview, null, 2)
+            }
+          ]
+        };
+      }
+
       case 'driftguard_create_snapshot': {
         const label = (args?.label as string) || 'manual-checkpoint';
         const snap = snapshotManager.createSnapshot(label);
@@ -164,7 +228,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `✅ Checkpoint creato con successo!\n- ID: ${snap.id}\n- Etichetta: ${snap.label}\n- File tracciati: ${Object.keys(snap.files).length}\n- Timestamp: ${snap.timestamp}`
+              text: `✅ Checkpoint creato!\n- ID: ${snap.id}\n- Etichetta: ${snap.label}\n- File tracciati: ${Object.keys(snap.files).length}\n- Timestamp: ${snap.timestamp}`
             }
           ]
         };
@@ -283,13 +347,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// Avvio Server MCP su Stdio
 async function run() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
 
 run().catch((err) => {
-  process.stderr.write(`DriftGuard MCP Server fatal error: ${err.message}\n`);
+  process.stderr.write(`Agent-Blackbox fatal error: ${err.message}\n`);
   process.exit(1);
 });

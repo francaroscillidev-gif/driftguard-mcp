@@ -1,7 +1,7 @@
 {
   "name": "agent-blackbox-mcp",
-  "version": "1.0.1",
-  "description": "The AI Agent Flight Recorder & Runtime Doctor: instant undo, port collision diagnostics & reproducibility (MCP Server)",
+  "version": "1.1.0",
+  "description": "The AI Agent Flight Recorder & Runtime Doctor: instant undo, diff preview, safety guardrail & port collision doctor (MCP Server)",
   "main": "dist/index.js",
   "bin": {
     "agent-blackbox-mcp": "./dist/index.js"
@@ -14,6 +14,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "dashboard": "node dist/index.js --ui",
     "test": "node --test dist/**/*.test.js",
     "prepare": "npm run build"
   },
@@ -27,7 +28,9 @@
     "flight-recorder",
     "doctor",
     "blackbox",
-    "sandbox"
+    "sandbox",
+    "guardrail",
+    "rollback"
   ],
   "author": "francaroscillidev",
   "license": "MIT",
@@ -42,6 +45,7 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "Dockerfile"
   ]
 }
