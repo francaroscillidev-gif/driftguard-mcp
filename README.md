@@ -105,6 +105,18 @@ npm test
 
 ---
 
+## 📬 Contact, Support & Commercial Inquiries
+
+If you have questions, feedback, enterprise integration requests, or custom agent governance needs, feel free to reach out directly:
+
+- **Lead Developer & Maintainer**: Franca Roscilli
+- **Email**: [francaroscillidev@gmail.com](mailto:francaroscillidev@gmail.com)
+- **GitHub**: [@francaroscillidev-gif](https://github.com/francaroscillidev-gif)
+- **Bug Reports & Feature Requests**: [Open an issue on GitHub](https://github.com/francaroscillidev-gif/driftguard-mcp/issues)
+
+---
+
 ## 📄 License
 Released under the [Apache 2.0 License](LICENSE).  
 Copyright 2026 Franca Roscilli (francaroscillidev@gmail.com).
+
