@@ -1,7 +1,7 @@
 {
   "name": "agent-blackbox-mcp",
-  "version": "1.1.0",
-  "description": "The AI Agent Flight Recorder & Runtime Doctor: instant undo, diff preview, safety guardrail & port collision doctor (MCP Server)",
+  "version": "1.4.0",
+  "description": "The Complete AI Agent Flight Recorder, Governance, Network Shield & Token Budget Controller (MCP Server)",
   "main": "dist/index.js",
   "bin": {
     "agent-blackbox-mcp": "./dist/index.js"
@@ -27,12 +27,20 @@
     "devtools",
     "flight-recorder",
     "doctor",
+    "circuit-breaker",
+    "log-compressor",
+    "token-optimizer",
+    "network-shield",
+    "audit-trail",
+    "telemetry",
     "blackbox",
     "sandbox",
     "guardrail",
-    "rollback"
+    "rollback",
+    "secrets",
+    "git-shadow"
   ],
-  "author": "francaroscillidev",
+  "author": "Franca Roscilli <francaroscillidev@gmail.com> (https://github.com/francaroscillidev-gif)",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",

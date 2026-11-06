@@ -12,14 +12,27 @@ import { RuntimeDoctor } from './modules/doctor.js';
 import { RecipeExtractor } from './modules/recipe.js';
 import { SafetyGuardrail } from './modules/safety.js';
 import { DashboardServer } from './modules/dashboard.js';
+import { SecretScanner, SecretFinding } from './modules/secrets.js';
+import { GitShadowManager } from './modules/gitShadow.js';
+import { CircuitBreakerManager } from './modules/circuitBreaker.js';
+import { LogCompressor } from './modules/logCompressor.js';
+import { TelemetryBudgetManager } from './modules/telemetry.js';
+import { NetworkEgressGuard } from './modules/networkGuard.js';
+import { AuditTrailExporter } from './modules/auditReport.js';
 
 const workspaceRoot = process.cwd();
 const snapshotManager = new SnapshotManager(workspaceRoot);
 const runtimeDoctor = new RuntimeDoctor();
 const recipeExtractor = new RecipeExtractor(workspaceRoot);
 const safetyGuardrail = new SafetyGuardrail();
+const secretScanner = new SecretScanner();
+const gitShadowManager = new GitShadowManager(workspaceRoot);
+const circuitBreaker = new CircuitBreakerManager(3);
+const logCompressor = new LogCompressor();
+const telemetryManager = new TelemetryBudgetManager({ maxTokens: 250000, maxCostUSD: 1.0 });
+const networkGuard = new NetworkEgressGuard();
+const auditExporter = new AuditTrailExporter();
 
-// Se l'utente lancia con --ui, avvia anche la dashboard HTTP locale
 if (process.argv.includes('--ui')) {
   const dashboard = new DashboardServer(workspaceRoot, 4200);
   dashboard.start().then((url) => {
@@ -30,7 +43,7 @@ if (process.argv.includes('--ui')) {
 const server = new Server(
   {
     name: 'agent-blackbox-mcp',
-    version: '1.1.0'
+    version: '1.4.0'
   },
   {
     capabilities: {
@@ -39,8 +52,121 @@ const server = new Server(
   }
 );
 
-// Strumenti esposti all'agente AI (10 tool totali)
 const TOOLS: Tool[] = [
+  {
+    name: 'driftguard_budget_status',
+    description:
+      'Monitora la telemetria di spesa e token consumati della sessione corrente, avvisando prima di superare il budget limite.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'driftguard_network_check',
+    description:
+      'Ispeziona comandi shell con chiamate di rete (curl, wget, npm, pip) per bloccare script malevoli piped (| bash), IP grezzi o domini non verificati.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        command: {
+          type: 'string',
+          description: 'Il comando shell contenente URL o chiamate di rete.'
+        }
+      },
+      required: ['command']
+    }
+  },
+  {
+    name: 'driftguard_export_audit_report',
+    description:
+      'Genera e firma digitalmente un Report di Conformità & Audit Trail completo (zero-secrets, checkpoint, modifiche effettuate e telemetria token).',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'driftguard_circuit_breaker_check',
+    description:
+      'Registra l\'esito di un comando ed evita loop infiniti di allucinazione, bloccando l\'agente se ripete lo stesso errore per 3 volte consecutive.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        command: {
+          type: 'string',
+          description: 'Il comando appena eseguito.'
+        },
+        exitCode: {
+          type: 'number',
+          description: 'L\'exit code del comando (0 per successo, != 0 per errore).'
+        },
+        errorSnippet: {
+          type: 'string',
+          description: 'Snippet opzionale del messaggio di errore.'
+        }
+      },
+      required: ['command', 'exitCode']
+    }
+  },
+  {
+    name: 'driftguard_compress_log',
+    description:
+      'Comprime log di compilazione prolissi e stack trace (rimuovendo ANSI colors, boilerplate di node_modules e rumore interno), risparmiando fino all\'85-90% di token di contesto.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        rawLog: {
+          type: 'string',
+          description: 'L\'intero output del comando terminale da comprimere.'
+        }
+      },
+      required: ['rawLog']
+    }
+  },
+  {
+    name: 'driftguard_scan_secrets',
+    description:
+      'Scansiona il workspace o un testo per rilevare chiavi API hardcoded (OpenAI, Anthropic, Google, AWS, Stripe, GitHub, DB URI) per prevenire leak accidentali.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        textOnly: {
+          type: 'string',
+          description: 'Testo facoltativo da ispezionare invece di scansionare l\'intero workspace.'
+        }
+      }
+    }
+  },
+  {
+    name: 'driftguard_remediate_secret',
+    description:
+      'Sposta un segreto trovato in chiaro nel file .env locale, assicurando l\'inserimento di .env in .gitignore e sostituendo il valore con process.env.<VAR>.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        finding: {
+          type: 'object',
+          description: 'L\'oggetto finding restituito da driftguard_scan_secrets.'
+        }
+      },
+      required: ['finding']
+    }
+  },
+  {
+    name: 'driftguard_git_shadow_checkpoint',
+    description:
+      'Crea un checkpoint ombra nativo Git (senza spostare l\'HEAD dell\'utente né sporcare i branch di lavoro attivi).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        label: {
+          type: 'string',
+          description: 'Etichetta descrittiva del checkpoint ombra.'
+        }
+      }
+    }
+  },
   {
     name: 'driftguard_safety_check',
     description:
@@ -154,28 +280,6 @@ const TOOLS: Tool[] = [
     }
   },
   {
-    name: 'driftguard_log_command',
-    description: 'Registra un comando eseguito con relativo exit code per comporre la ricetta finale di riproducibilità.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        command: {
-          type: 'string',
-          description: 'Il comando eseguito.'
-        },
-        exitCode: {
-          type: 'number',
-          description: 'Il codice di uscita (0 per successo, != 0 per errore).'
-        },
-        durationMs: {
-          type: 'number',
-          description: 'Durata in millisecondi.'
-        }
-      },
-      required: ['command', 'exitCode']
-    }
-  },
-  {
     name: 'driftguard_get_recipe',
     description:
       'Genera il Reproducibility Blueprint: un estratto pulito dei soli comandi riusciti ed essenziali.',
@@ -195,6 +299,111 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      case 'driftguard_budget_status': {
+        const status = telemetryManager.getStatus();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(status, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_network_check': {
+        const cmd = (args?.command as string) || '';
+        const assessment = networkGuard.evaluateNetworkCommand(cmd);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(assessment, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_export_audit_report': {
+        const report = auditExporter.generateReport(workspaceRoot, snapshotManager, secretScanner, telemetryManager);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: report.markdownContent
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_circuit_breaker_check': {
+        const cmd = args?.command as string;
+        const code = args?.exitCode as number;
+        const err = args?.errorSnippet as string | undefined;
+        const status = circuitBreaker.recordAttempt(cmd, code, err);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(status, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_compress_log': {
+        const raw = (args?.rawLog as string) || '';
+        const compressed = logCompressor.compress(raw);
+        telemetryManager.trackUsage(raw, compressed.tokensSavedEstimate);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(compressed, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_scan_secrets': {
+        const textOnly = args?.textOnly as string | undefined;
+        const findings = textOnly ? secretScanner.scanText(textOnly) : secretScanner.scanWorkspace(workspaceRoot);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(findings, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_remediate_secret': {
+        const finding = args?.finding as SecretFinding;
+        const res = secretScanner.remediate(workspaceRoot, finding);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: res.message
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_git_shadow_checkpoint': {
+        const label = (args?.label as string) || 'shadow-save';
+        const res = gitShadowManager.createShadowCheckpoint(label);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(res, null, 2)
+            }
+          ]
+        };
+      }
+
       case 'driftguard_safety_check': {
         const cmd = (args?.command as string) || '';
         const assessment = safetyGuardrail.evaluateCommand(cmd);
@@ -294,26 +503,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: res.message
-            }
-          ]
-        };
-      }
-
-      case 'driftguard_log_command': {
-        const command = args?.command as string;
-        const exitCode = args?.exitCode as number;
-        const durationMs = (args?.durationMs as number) || 0;
-        recipeExtractor.recordCommand({
-          command,
-          exitCode,
-          timestamp: new Date().toISOString(),
-          durationMs
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Comando registrato in cronologia.`
             }
           ]
         };
