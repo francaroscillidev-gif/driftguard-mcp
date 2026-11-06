@@ -3,7 +3,7 @@
 # 📦 Agent-Blackbox MCP
 ### The Autonomous Flight Recorder, Governance, Network Shield & Token Budget Controller for AI Coding Agents
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B%20%7C%2020%2B%20%7C%2022%2B-brightgreen)](https://nodejs.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP-1.6.1-orange)](https://modelcontextprotocol.io/)
 [![npm version](https://img.shields.io/badge/npm-v1.4.0-cb3837.svg)](https://www.npmjs.com/package/agent-blackbox-mcp)
@@ -104,4 +104,4 @@ npm test
 ---
 
 ## 📄 License
-Released under the [MIT License](LICENSE).
+Released under the [Apache 2.0 License](LICENSE).
