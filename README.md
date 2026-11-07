@@ -1,46 +1,42 @@
 <div align="center">
 
-# 📦 Agent-Blackbox MCP
-### The Autonomous Flight Recorder, Self-Healing, Bloat Cleaner & Governance Suite for AI Agents
+# 🛡️ Agent-Blackbox MCP (v2.0 Titanium)
+### The Enterprise AI Agent Flight Recorder, Policy Engine & Autonomous Resilience Suite
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B%20%7C%2020%2B%20%7C%2022%2B-brightgreen)](https://nodejs.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP-1.6.1-orange)](https://modelcontextprotocol.io/)
-[![npm version](https://img.shields.io/badge/npm-v1.6.0-cb3837.svg)](https://www.npmjs.com/package/agent-blackbox-mcp)
+[![npm version](https://img.shields.io/badge/npm-v2.0.0-cb3837.svg)](https://www.npmjs.com/package/agent-blackbox-mcp)
 
-*The definitive enterprise resilience suite for Claude, Cursor, Antigravity, and Windsurf: autonomous self-healing, bloat pruning, prompt injection defense, instant rollback, and dependency auditing.*
+*The premier enterprise standard for autonomous coding agents (Claude Desktop, Cursor, Antigravity, Windsurf): policy-as-code enforcement, predictive dry-run simulation, selective precision rollbacks, and OpenTelemetry / Prometheus metrics.*
 
-**Author**: Franca Roscilli ([@francaroscillidev-gif](https://github.com/francaroscillidev-gif))
+**Lead Architect & Maintainer**: Franca Roscilli ([@francaroscillidev-gif](https://github.com/francaroscillidev-gif))
 
 </div>
 
 ---
 
-## ✨ Features (v1.6.0 Autonomous Resilience)
+## 🚀 What's New in v2.0 Titanium
 
-- 🦺 **Transactional Auto-Healing (`driftguard_auto_heal`)**: Diagnoses runtime failures, eliminates blocking zombie processes, and restores environment health in a single step.
-- 🧹 **Workspace Bloat Cleaner (`driftguard_clean_bloat`)**: Automatically cleans `.cache`, `.pytest_cache`, `.DS_Store`, and rogue log files, reclaiming disk space and accelerating snapshot times.
-- 🛡️ **Dependency Vulnerability Auditor (`driftguard_audit_dependencies`)**: Scans package manifests for compromised dependencies, malicious supply-chain packages, and deprecated libraries.
-- 💉 **Prompt Injection & Jailbreak Shield (`driftguard_prompt_shield`)**: Scans external prompts, files, and issues to block indirect prompt injection, DAN jailbreaks, instruction overrides, and credential theft.
-- 🩺 **Workspace Health Score Index (`driftguard_health_score`)**: Computes an instant 0-100 diagnostic index assessing exposed secrets, zombie processes, token budgets, and snapshot coverage.
-- 📊 **Token & Cost Budget Controller (`driftguard_budget_status`)**: Real-time telemetry tracking estimated token spend and session costs with customizable alert caps.
-- 🌐 **Network Egress & Pipe Blocker (`driftguard_network_check`)**: Detects remote code execution patterns (`curl ... | bash`), reverse shells, and raw IP queries, enforcing an enterprise domain whitelist.
-- 📑 **Cryptographic Audit Trail Exporter (`driftguard_export_audit_report`)**: Generates and SHA-256 signs a formal Markdown compliance report verifying actions, modified files, zero leaked secrets, and cost savings.
-- 🛑 **Anti-Loop Circuit Breaker (`driftguard_circuit_breaker_check`)**: Detects repeated failures and trips an emergency stop after 3 consecutive identical crashes.
-- 🗜️ **Semantic Log & Stack Trace Compressor (`driftguard_compress_log`)**: Strips ANSI colors, `node_modules` clutter, and internal runtime callstacks, **saving up to 85-90% of token context**.
-- 🔐 **Secret Leak Blocker (`driftguard_scan_secrets`)**: Deep scans for hardcoded API keys across 7+ providers with automated extraction to `.env`.
-- 🔀 **Git Shadow Checkpoints (`driftguard_git_shadow_checkpoint`)**: Creates isolated, non-intrusive Git shadow refs (`refs/driftguard/shadow-*`) without altering user branch HEAD or unstaged changes.
-- 🛡️ **Proactive Safety Guardrail (`driftguard_safety_check`)**: Intercepts dangerous commands (`rm -rf /`, `DROP DATABASE`, fork bombs, raw disk writes) before execution.
-- 🔍 **Visual Diff Preview (`driftguard_preview_rollback`)**: Inspect line-by-line diffs (`+` and `-`) before confirming a rollback.
-- 🩺 **Self-Healing Runtime Doctor**: Diagnoses Node/Python missing packages (`Cannot find module`, `ModuleNotFoundError`), Out of Memory (`OOM / max-old-space-size`), and undefined environment variables.
-- 📊 **Built-in Web Dashboard (`--ui`)**: Zero-dependency local web dashboard at `http://localhost:4200` to visualize active TCP listeners, inspect snapshots, and trigger one-click rollbacks.
+- 🧪 **Predictive Dry-Run Simulation (`driftguard_dry_run_command`)**: Evaluates potential shell impacts (predicting `fs.unlink`, `mkdir`, and affected file paths) before real execution.
+- 🎯 **Selective Precision Rollback (`driftguard_selective_rollback`)**: Surgically restores only specific damaged files from snapshots while preserving good modifications.
+- 🚦 **Real-Time Policy Engine (`driftguard_policy_check`)**: Enforces organization-wide rules via `driftguard.policy.json`, protecting sensitive directories (`.env`, `credentials/`, `production/`) and restricting unauthorized commands.
+- 📈 **OpenTelemetry & Prometheus Metrics Endpoint (`/metrics`)**: Standardized observability metrics exposed directly by the internal HTTP dashboard for Datadog, Prometheus, and Grafana.
+- 🦺 **Transactional Auto-Healing (`driftguard_auto_heal`)**: One-step resolution for zombie TCP ports and environment bottlenecks.
+- 🧹 **Workspace Bloat Cleaner (`driftguard_clean_bloat`)**: Automatically prunes cache directories and rogue debug logs.
+- 🛡️ **Dependency Vulnerability Auditor (`driftguard_audit_dependencies`)**: Scans package manifests for compromised and deprecated dependencies.
+- 💉 **Prompt Injection Shield (`driftguard_prompt_shield`)**: Neutralizes indirect prompt injections, DAN jailbreaks, and credential theft vectors.
+- 🩺 **Workspace Health Score Index (`driftguard_health_score`)**: Real-time 0-100 diagnostic index.
 
 ---
 
-## 🛠️ Complete MCP Toolset (21 Tools)
+## 🛠️ Complete MCP Toolset (24 Tools)
 
 | Tool Name | Parameters | Description |
 | :--- | :--- | :--- |
+| `driftguard_dry_run_command` | `command: string` | Predicts affected paths and system calls before execution. |
+| `driftguard_selective_rollback` | `targetFiles: string[], snapshotId?: string` | Surgically restores only specified files, preserving good progress. |
+| `driftguard_policy_check` | `actionDescription: string, targetPath?: string` | Enforces Policy-as-Code from `driftguard.policy.json`. |
 | `driftguard_auto_heal` | `errorLog: string` | One-step autonomous resolution: terminates blocking zombies and applies fixes. |
 | `driftguard_clean_bloat` | `dryRun?: boolean` | Prunes cache folders (.pytest_cache, .cache, .tmp) and orphan logs. |
 | `driftguard_audit_dependencies` | _none_ | Audits dependencies for known compromised packages and deprecations. |
@@ -76,7 +72,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "agent-blackbox": {
       "command": "npx",
-      "args": ["-y", "agent-blackbox-mcp@1.6.0"]
+      "args": ["-y", "agent-blackbox-mcp@2.0.0"]
     }
   }
 }
@@ -85,14 +81,15 @@ Add to `claude_desktop_config.json`:
 #### ⚡ Cursor / Antigravity / Windsurf
 Add via the MCP settings tab:
 * **Command**: `npx`
-* **Args**: `-y agent-blackbox-mcp@1.6.0`
+* **Args**: `-y agent-blackbox-mcp@2.0.0`
 
-#### 📊 Optional Web Dashboard
+#### 📊 Web Dashboard & Prometheus Metrics
 Run the dashboard alongside the server:
 ```bash
 npx -y agent-blackbox-mcp --ui
 ```
-Then open [http://localhost:4200](http://localhost:4200) in your browser.
+* Dashboard UI: [http://localhost:4200](http://localhost:4200)
+* Prometheus Scrape Target: [http://localhost:4200/metrics](http://localhost:4200/metrics)
 
 ---
 
@@ -107,8 +104,6 @@ npm test
 
 ## 📬 Contact, Support & Commercial Inquiries
 
-If you have questions, feedback, enterprise integration requests, or custom agent governance needs, feel free to reach out directly:
-
 - **Lead Developer & Maintainer**: Franca Roscilli
 - **Email**: [francaroscillidev@gmail.com](mailto:francaroscillidev@gmail.com)
 - **GitHub**: [@francaroscillidev-gif](https://github.com/francaroscillidev-gif)
@@ -119,4 +114,3 @@ If you have questions, feedback, enterprise integration requests, or custom agen
 ## 📄 License
 Released under the [Apache 2.0 License](LICENSE).  
 Copyright 2026 Franca Roscilli (francaroscillidev@gmail.com).
-

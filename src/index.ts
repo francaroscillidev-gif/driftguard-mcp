@@ -24,6 +24,8 @@ import { HealthScoreEngine } from './modules/healthScore.js';
 import { WorkspaceBloatCleaner } from './modules/cleaner.js';
 import { DependencyAuditor } from './modules/depAuditor.js';
 import { AutoHealPipeline } from './modules/autoHeal.js';
+import { PolicyEngine } from './modules/policyEngine.js';
+import { DryRunSimulator } from './modules/dryRun.js';
 
 const workspaceRoot = process.cwd();
 const snapshotManager = new SnapshotManager(workspaceRoot);
@@ -42,18 +44,20 @@ const healthEngine = new HealthScoreEngine();
 const bloatCleaner = new WorkspaceBloatCleaner();
 const depAuditor = new DependencyAuditor();
 const autoHealer = new AutoHealPipeline(runtimeDoctor);
+const policyEngine = new PolicyEngine(workspaceRoot);
+const dryRunSimulator = new DryRunSimulator();
 
 if (process.argv.includes('--ui')) {
   const dashboard = new DashboardServer(workspaceRoot, 4200);
   dashboard.start().then((url) => {
-    process.stderr.write(`[Agent-Blackbox] Dashboard web attiva su: ${url}\n`);
+    process.stderr.write(`[Agent-Blackbox] Dashboard web & Prometheus metrics attivi su: ${url}\n`);
   });
 }
 
 const server = new Server(
   {
     name: 'agent-blackbox-mcp',
-    version: '1.6.0'
+    version: '2.0.0'
   },
   {
     capabilities: {
@@ -63,6 +67,60 @@ const server = new Server(
 );
 
 const TOOLS: Tool[] = [
+  {
+    name: 'driftguard_dry_run_command',
+    description:
+      'Simulatore predittivo di esecuzione: predice le chiamate di sistema (unlink, mkdir, network) e i file impattati prima di lanciare il comando.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        command: {
+          type: 'string',
+          description: 'Il comando da simulare.'
+        }
+      },
+      required: ['command']
+    }
+  },
+  {
+    name: 'driftguard_selective_rollback',
+    description:
+      'Rollback di precisione: ripristina esclusivamente un elenco mirato di file specifici dallo snapshot, preservando i file sani creati nel frattempo.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        targetFiles: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array dei percorsi relativi dei file da ripristinare.'
+        },
+        snapshotId: {
+          type: 'string',
+          description: 'ID facoltativo dello snapshot sorgente (default: più recente).'
+        }
+      },
+      required: ['targetFiles']
+    }
+  },
+  {
+    name: 'driftguard_policy_check',
+    description:
+      'Verifica di conformità Policy as Code aziendale: controlla se l\'azione o il percorso violano le policy di driftguard.policy.json o protezioni di cartelle critiche.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        actionDescription: {
+          type: 'string',
+          description: 'Comando o descrizione dell\'azione.'
+        },
+        targetPath: {
+          type: 'string',
+          description: 'Percorso del file o cartella coinvolto.'
+        }
+      },
+      required: ['actionDescription']
+    }
+  },
   {
     name: 'driftguard_auto_heal',
     description:
@@ -371,6 +429,47 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      case 'driftguard_dry_run_command': {
+        const cmd = (args?.command as string) || '';
+        const pred = dryRunSimulator.simulateCommand(cmd);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(pred, null, 2)
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_selective_rollback': {
+        const targets = (args?.targetFiles as string[]) || [];
+        const snapId = args?.snapshotId as string | undefined;
+        const res = snapshotManager.selectiveRollback(targets, snapId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `🎯 Rollback Selettivo completato con successo!\n- File ripristinati: ${res.restored.join(', ')}\n- Snapshot sorgente: ${res.snapshotId}`
+            }
+          ]
+        };
+      }
+
+      case 'driftguard_policy_check': {
+        const action = (args?.actionDescription as string) || '';
+        const target = args?.targetPath as string | undefined;
+        const assessment = policyEngine.evaluateAction(action, target);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(assessment, null, 2)
+            }
+          ]
+        };
+      }
+
       case 'driftguard_auto_heal': {
         const errorLog = (args?.errorLog as string) || '';
         const healRes = autoHealer.healError(errorLog);

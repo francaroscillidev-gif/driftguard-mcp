@@ -286,4 +286,46 @@ export class SnapshotManager {
       deleted
     };
   }
+
+  /**
+   * Esegue un rollback selettivo: ripristina solo i file specificati mantenendo intatti gli altri file
+   */
+  public selectiveRollback(targetFiles: string[], snapshotId?: string): { restored: string[]; snapshotId: string } {
+    let targetSnapId = snapshotId;
+    if (!targetSnapId) {
+      const all = this.listSnapshots();
+      if (all.length === 0) {
+        throw new Error('Nessuno snapshot disponibile per il rollback selettivo.');
+      }
+      targetSnapId = all[0].id;
+    }
+
+    const metaFile = path.join(this.storageDir, `${targetSnapId}.json`);
+    if (!fs.existsSync(metaFile)) {
+      throw new Error(`Snapshot ${targetSnapId} non trovato.`);
+    }
+
+    const metadata: SnapshotMetadata = JSON.parse(fs.readFileSync(metaFile, 'utf-8'));
+    const snapBlobDir = path.join(this.storageDir, targetSnapId, 'blobs');
+    const restored: string[] = [];
+
+    for (const relPath of targetFiles) {
+      const entry = metadata.files[relPath];
+      if (entry) {
+        const targetFilePath = path.join(this.baseDir, relPath);
+        const blobPath = path.join(snapBlobDir, entry.hash);
+
+        if (fs.existsSync(blobPath)) {
+          fs.mkdirSync(path.dirname(targetFilePath), { recursive: true });
+          fs.copyFileSync(blobPath, targetFilePath);
+          restored.push(relPath);
+        }
+      }
+    }
+
+    return {
+      snapshotId: targetSnapId,
+      restored
+    };
+  }
 }

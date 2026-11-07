@@ -1,7 +1,7 @@
 {
   "name": "agent-blackbox-mcp",
-  "version": "1.6.0",
-  "description": "The Autonomous AI Agent Flight Recorder, Self-Healing, Bloat Cleaner & Security Suite (MCP Server)",
+  "version": "2.0.0",
+  "description": "The Enterprise AI Agent Flight Recorder, Dry-Run Simulator, Policy as Code & Autonomous Resilience Suite (MCP Server)",
   "main": "dist/index.js",
   "bin": {
     "agent-blackbox-mcp": "./dist/index.js"
@@ -25,6 +25,11 @@
     "cursor",
     "claude",
     "devtools",
+    "policy-as-code",
+    "dry-run",
+    "selective-rollback",
+    "prometheus",
+    "opentelemetry",
     "self-healing",
     "bloat-cleaner",
     "dep-auditor",

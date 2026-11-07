@@ -19,6 +19,26 @@ export class DashboardServer {
       this.server = http.createServer((req, res) => {
         const url = new URL(req.url || '/', `http://localhost:${this.port}`);
 
+        // Metrics Endpoint (Prometheus / OpenTelemetry compatible)
+        if (url.pathname === '/metrics') {
+          const snapshots = this.snapshotManager.listSnapshots();
+          const ports = this.runtimeDoctor.inspectPort();
+          const metrics = [
+            '# HELP driftguard_snapshots_total Total number of workspace checkpoints created',
+            '# TYPE driftguard_snapshots_total counter',
+            `driftguard_snapshots_total ${snapshots.length}`,
+            '# HELP driftguard_active_ports_count Number of TCP ports currently in listening state',
+            '# TYPE driftguard_active_ports_count gauge',
+            `driftguard_active_ports_count ${ports.length}`,
+            '# HELP driftguard_agent_server_status Status of the Agent-Blackbox MCP core (1 = operational)',
+            '# TYPE driftguard_agent_server_status gauge',
+            'driftguard_agent_server_status 1'
+          ].join('\n');
+
+          res.writeHead(200, { 'Content-Type': 'text/plain; version=0.0.4; charset=utf-8' });
+          return res.end(metrics);
+        }
+
         // API Endpoints
         if (url.pathname === '/api/snapshots') {
           const list = this.snapshotManager.listSnapshots();
