@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "2.0.0",
+  "environment": "development",
+  "protectedDirectories": [
+    ".git",
+    ".env",
+    "node_modules",
+    "credentials",
+    "production"
+  ],
+  "maxMemoryMB": 4096,
+  "rules": [
+    {
+      "id": "DENY_RAW_DISK_WRITE",
+      "action": "DENY",
+      "pattern": "\\bdd\\s+.*?of=/dev/",
+      "description": "Blocca scritture grezze dirette su disco a basso livello."
+    },
+    {
+      "id": "DENY_KILL_ROOT",
+      "action": "DENY",
+      "pattern": "\\bkill\\s+(-9\\s+)?(1\\b|0\\b)",
+      "description": "Blocca tentativi di terminare processi di init o di sistema root."
+    },
+    {
+      "id": "DENY_ENV_PRINT",
+      "action": "DENY",
+      "pattern": "\\b(printenv|env|set)\\b.*?(\\||>)",
+      "description": "Blocca tentativi di esportare o redirezionare variabili d'ambiente su file/rete."
+    }
+  ]
+}
