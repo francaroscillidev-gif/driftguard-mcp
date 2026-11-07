@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./assets/logo.svg" alt="Agent-Blackbox Logo" width="140" height="140" style="margin-bottom: 12px;" />
+
 # 🛡️ Agent-Blackbox MCP (v2.0 Titanium)
 ### The Enterprise AI Agent Flight Recorder, Policy Engine & Autonomous Resilience Suite
 

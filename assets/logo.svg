@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1d" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Shield Border Gradient (Electric Indigo / Cyan) -->
+    <linearGradient id="shieldBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+
+    <!-- Shield Core Glass Gradient -->
+    <linearGradient id="shieldCore" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95" />
+    </linearGradient>
+
+    <!-- Glowing Cube Gradients -->
+    <linearGradient id="cubeTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0ea5e9" />
+    </linearGradient>
+    <linearGradient id="cubeLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#4338ca" />
+    </linearGradient>
+    <linearGradient id="cubeRight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+
+    <!-- Holographic Pulse Glow -->
+    <radialGradient id="holoGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.45" />
+      <stop offset="70%" stop-color="#38bdf8" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Soft Drop Shadow Filter -->
+    <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Base Rounded Canvas -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Outer Neon Radial Ambient Glow -->
+  <circle cx="256" cy="256" r="210" fill="url(#holoGlow)" />
+
+  <!-- Tech Grid Circuit Lines -->
+  <g stroke="#334155" stroke-width="1.5" stroke-opacity="0.35" stroke-dasharray="4,6">
+    <circle cx="256" cy="256" r="195" fill="none" />
+    <circle cx="256" cy="256" r="145" fill="none" />
+    <line x1="256" y1="40" x2="256" y2="472" />
+    <line x1="40" y1="256" x2="472" y2="256" />
+  </g>
+
+  <!-- The Cybernetic Shield Outline -->
+  <path d="M 256 64 
+           C 336 96, 400 108, 416 160 
+           C 416 288, 336 384, 256 432 
+           C 176 384, 96 288, 96 160 
+           C 112 108, 176 96, 256 64 Z" 
+        fill="url(#shieldCore)" 
+        stroke="url(#shieldBorder)" 
+        stroke-width="7" 
+        filter="url(#glowFilter)" />
+
+  <!-- Inner Protective Shield Inset -->
+  <path d="M 256 86 
+           C 324 114, 380 124, 394 168 
+           C 394 274, 324 354, 256 396 
+           C 188 354, 118 274, 118 168 
+           C 132 124, 188 114, 256 86 Z" 
+        fill="none" 
+        stroke="#38bdf8" 
+        stroke-width="1.8" 
+        stroke-opacity="0.4" 
+        stroke-dasharray="6,4" />
+
+  <!-- ISOMETRIC BLACKBOX CUBE (The Core Flight Recorder) -->
+  <g transform="translate(256, 235)">
+    <!-- Top Face -->
+    <polygon points="0,-64 56,-32 0,0 -56,-32" fill="url(#cubeTop)" stroke="#e0f2fe" stroke-width="1.5" />
+    
+    <!-- Left Face -->
+    <polygon points="-56,-32 0,0 0,64 -56,32" fill="url(#cubeLeft)" stroke="#312e81" stroke-width="1.5" />
+    
+    <!-- Right Face -->
+    <polygon points="0,0 56,-32 56,32 0,64" fill="url(#cubeRight)" stroke="#4338ca" stroke-width="1.5" />
+
+    <!-- Isometric Pulse Lines (Digital Data Core) -->
+    <line x1="0" y1="0" x2="0" y2="64" stroke="#a5f3fc" stroke-width="2" />
+    <circle cx="0" cy="0" r="4.5" fill="#ffffff" filter="url(#glowFilter)" />
+  </g>
+
+  <!-- Undo / Instant Rollback Circular Arrows (Surrounding the Box) -->
+  <g stroke="#38bdf8" stroke-width="4.5" fill="none" stroke-linecap="round">
+    <!-- Counter-Clockwise Top Arc -->
+    <path d="M 185 180 A 100 100 0 0 1 327 180" stroke="#38bdf8" stroke-dasharray="140,20" />
+    <!-- Arrow Head on Left -->
+    <polygon points="175,178 190,165 190,192" fill="#38bdf8" stroke="none" />
+  </g>
+
+  <!-- Health Pulse Heartbeat (Doctor Diagnostic Line) -->
+  <path d="M 170 330 
+           L 215 330 
+           L 230 305 
+           L 245 355 
+           L 265 295 
+           L 280 340 
+           L 295 330 
+           L 342 330" 
+        stroke="#4ade80" 
+        stroke-width="4.5" 
+        fill="none" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        filter="url(#glowFilter)" />
+
+  <!-- Subtly Glowing Data Dots -->
+  <circle cx="256" cy="120" r="3" fill="#38bdf8" />
+  <circle cx="340" cy="245" r="3" fill="#6366f1" />
+  <circle cx="172" cy="245" r="3" fill="#6366f1" />
+</svg>
